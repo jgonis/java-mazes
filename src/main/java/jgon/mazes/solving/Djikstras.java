@@ -1,0 +1,1 @@
+package jgon.mazes.solving;
