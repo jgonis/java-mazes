@@ -6,8 +6,8 @@ import java.io.PrintStream;
 
 import org.junit.jupiter.api.AfterEach;
 
-import jgon.mazes.BinaryTreeMazeAlgorithm;
 import jgon.mazes.Grid;
+import jgon.mazes.generation.BinaryTreeMazeAlgorithm;
 
 class MazeAsciiDrawerTest {
 
