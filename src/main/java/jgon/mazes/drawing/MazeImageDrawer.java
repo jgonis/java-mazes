@@ -7,6 +7,7 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -18,10 +19,33 @@ public class MazeImageDrawer {
 
     private static final int DEFAULT_PAGE_INSET = 96;
 
-    private File outputFile;
+    private final File outputFile;
+    private List<ICellRenderer> cellRenderers = new ArrayList<>();
 
-    public MazeImageDrawer(String fileName) {
-        this.outputFile = new File(fileName);
+    private MazeImageDrawer(Builder builder) {
+        this.outputFile = new File(builder.fileName);
+        this.cellRenderers = builder.cellRenderers;
+    }
+
+    public static class Builder {
+
+        private final String fileName;
+        private final List<ICellRenderer> cellRenderers = new ArrayList<>();
+
+        public Builder(String filename,
+                ICellRenderer cellRenderer) {
+            this.fileName = filename;
+            this.cellRenderers.add(cellRenderer);
+        }
+
+        public Builder addCellRenderer(ICellRenderer cellRenderer) {
+            this.cellRenderers.add(cellRenderer);
+            return this;
+        }
+
+        public MazeImageDrawer createMazeImageDrawer() {
+            return new MazeImageDrawer(this);
+        }
     }
 
     public void drawMaze(Grid grid) throws IOException {
@@ -43,28 +67,14 @@ public class MazeImageDrawer {
         for (List<Cell> row : grid.rowIterator()) {
             int xOffset = initialXOffset;
             for (Cell cell : row) {
-                drawCell(cell, g2d, cellSize, xOffset, yOffset);
+                for (ICellRenderer cellRenderer : cellRenderers) {
+                    cellRenderer.render(cell, g2d, cellSize, cellSize, xOffset, yOffset);
+                }
                 xOffset += cellSize;
             }
             yOffset += cellSize;
         }
         ImageIO.write(image, "png", this.outputFile);
-    }
-
-    private void drawCell(Cell cell, Graphics2D g2d, int cellSize, int xOffset, int yOffset) {
-        if (cell.north().equals(Cell.OUTSIDE)
-                || (!cell.north().equals(Cell.OUTSIDE) && !cell.isLinked(cell.north()))) {
-            g2d.drawLine(xOffset, yOffset, xOffset + cellSize, yOffset);
-        }
-        if ((cell.west().equals(Cell.OUTSIDE) && !cell.isStart()) || (!cell.west().equals(Cell.OUTSIDE) && !cell.isLinked(cell.west()))) {
-            g2d.drawLine(xOffset, yOffset, xOffset, yOffset + cellSize);
-        }
-        if ((cell.east().equals(Cell.OUTSIDE) && !cell.isEnd()) || (!cell.east().equals(Cell.OUTSIDE) && !cell.isLinked(cell.east()))) {
-            g2d.drawLine(xOffset + cellSize, yOffset, xOffset + cellSize, yOffset + cellSize);
-        }
-        if (cell.south().equals(Cell.OUTSIDE) || (!cell.south().equals(Cell.OUTSIDE) && !cell.isLinked(cell.south()))) {
-            g2d.drawLine(xOffset, yOffset + cellSize, xOffset + cellSize, yOffset + cellSize);
-        }
     }
 
     private PageOrientation calculatePageOrientation(Grid grid) {
@@ -75,19 +85,24 @@ public class MazeImageDrawer {
         }
     }
 
-    private int calculateGridCellSize(Grid grid, Page page) {
+    private int calculateGridCellSize(Grid grid,
+            Page page) {
         int cellWidth = (page.getPageWidthInPixels() - MazeImageDrawer.DEFAULT_PAGE_INSET) / grid.getColumns();
         int cellHeight = (page.getPageHeightInPixels() - MazeImageDrawer.DEFAULT_PAGE_INSET) / grid.getRows();
         return Math.min(cellWidth, cellHeight);
     }
 
-    private int calculateXOffset(Grid grid, int cellSize, Page page) {
+    private int calculateXOffset(Grid grid,
+            int cellSize,
+            Page page) {
         int pageWidth = page.getPageWidthInPixels();
         int mazeWidth = grid.getColumns() * cellSize;
         return (pageWidth - mazeWidth) / 2;
     }
 
-    private int calculateYOffset(Grid grid, int cellSize, Page page) {
+    private int calculateYOffset(Grid grid,
+            int cellSize,
+            Page page) {
         int pageHeight = page.getPageHeightInPixels();
         int mazeHeight = grid.getRows() * cellSize;
         return (pageHeight - mazeHeight) / 2;

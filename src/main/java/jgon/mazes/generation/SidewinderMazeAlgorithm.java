@@ -31,9 +31,5 @@ public class SidewinderMazeAlgorithm {
                 }
             }
         });
-        grid.cellAt(grid.getRows() - 1, 0)
-                .setIsStart();
-        grid.cellAt(0, grid.getColumns() - 1)
-                .setIsEnd();
     }
 }
